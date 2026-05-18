@@ -7,6 +7,8 @@ This repo documents one specific install (SONOFF MINI-ZB2GS Zigbee relay + Ovlai
 ![Before: standard European two-way switch circuit](diagrams/01-before-conmutador.png)
 ![After: bypass mode with Zigbee relay](diagrams/02-after-bypass-wiring.png)
 
+> Both PNG diagrams are exported from a single [Excalidraw source file](diagrams/wiring-diagrams.excalidraw). To customise them for your own setup (different brand, different room, different language), upload the `.excalidraw` file to [excalidraw.com](https://excalidraw.com/) or open it in the Excalidraw desktop app, edit, and re-export PNG. Pull requests with diagram improvements are welcome.
+
 ## The problem this solves
 
 If you replace a "dumb" ceiling lamp with a WiFi smart ceiling fan, you hit a paradox:
@@ -113,7 +115,8 @@ The automation uses `mode: single` so that a double-flip in less than a second i
 │   └── wall_switch_smart_toggle.yaml  generic, parameterised automation
 ├── diagrams/
 │   ├── 01-before-conmutador.png       starting state: standard European two-way circuit
-│   └── 02-after-bypass-wiring.png     final state: bypass wiring with Zigbee relay + Tuya WiFi fan
+│   ├── 02-after-bypass-wiring.png     final state: bypass wiring with Zigbee relay + Tuya WiFi fan
+│   └── wiring-diagrams.excalidraw     editable source for both PNGs (open at excalidraw.com)
 └── manuals/                           official vendor PDFs, included for offline reference
     ├── sonoff_mini_zb2gs_user_manual_EN_V1.0.pdf
     ├── sonoff_mini_duo_quick_guide_V1.1.pdf       (multi-language quick guide)
