@@ -1,0 +1,113 @@
+# =============================================================================
+# Bypass-wired wall switch -> smart toggle automation
+# =============================================================================
+#
+# What this automation does
+# -------------------------
+# When the physical wall switch is flipped (a state change on the Zigbee relay's
+# channel-2 switch entity in edge-trigger mode), this automation reads the
+# current state of the "always-on" load (ceiling fan + integrated light) and
+# acts like a smart toggle:
+#
+#   IF the light OR the fan is currently on  ->  turn both OFF
+#   ELSE                                     ->  turn the integrated light ON
+#
+# This gives the wall switch a sensible default action (light on) while still
+# letting one flip kill the fan whenever it is running.
+#
+# Wiring assumption
+# -----------------
+# The load (smart fan + integrated light) is wired in BYPASS mode: it receives
+# permanent live + neutral directly, never via the relay's L1/L2 output. The
+# wall switch chain feeds the relay's S input only. The relay therefore acts
+# purely as a "Zigbee signal generator" for the physical switch, not as a
+# load-controlling switch. See the project README for the full wiring story
+# and diagrams.
+#
+# How to adapt this for your house
+# --------------------------------
+# Replace the four entity IDs below with the matching entities from your own
+# Home Assistant. The structure is independent of brand: it works with any
+# Zigbee relay that exposes a switch entity reflecting S-input edges (Sonoff
+# MINI-ZB2GS, Sonoff ZBMINI, MOES MS-104BZ, third-party Tuya/MOES TS011F
+# modules, etc.), and any smart fan whose integration exposes a `fan.*` plus
+# `light.*` entity (most Tuya WiFi DC fans, BAF, Hampton Bay/Bond, etc.).
+#
+#   <YOUR_WALL_SWITCH_ENTITY>
+#       The Zigbee relay channel that mirrors the wall-switch input. With
+#       edge-trigger mode enabled on the relay, this entity flips state on
+#       every wall-switch press. Typical names:
+#         - switch.sonoff_mini_zb2gs_kitchen_switch_2
+#         - switch.smartswitcher_corridor_light_switch
+#
+#   <YOUR_FAN_ENTITY>
+#       The smart ceiling fan motor entity. State is "on" or "off"; the speed
+#       lives in the `percentage` attribute.
+#         - fan.smart_ceiling_fan_living_room
+#         - fan.master_bedroom_fan
+#
+#   <YOUR_FAN_LIGHT_ENTITY>
+#       The integrated light entity on the fan canopy. State is "on" / "off",
+#       brightness and color temperature are attributes.
+#         - light.smart_ceiling_fan_living_room
+#         - light.master_bedroom_fan
+#
+# Variants you might want
+# -----------------------
+#  * If your fan has no integrated light, drop the light.turn_on / light.turn_off
+#    actions and route the "else" branch to fan.turn_on at a low percentage
+#    (e.g. percentage: 17 for a 6-speed fan -> speed 1).
+#  * If you have two channels in use (e.g. light + fan + reading lamp), expand
+#    the condition with another `condition: state` block under `condition: or`
+#    and add the matching turn_off action to the `then:` sequence.
+#  * If you have multiple wall switches feeding the same load (Spanish
+#    conmutador, UK two-way, US 3-way), no change needed: edge-trigger mode
+#    means every switch position change toggles the relay state, so the same
+#    automation handles all of them.
+# =============================================================================
+
+- id: wall_switch_smart_toggle
+  alias: Wall switch (bypass-wired) - smart toggle
+  description: >-
+    Physical wall-switch flip on a bypass-wired conmutador / 3-way chain.
+    The Zigbee relay's S-input edge-trigger state change drives this
+    automation. If either the integrated light or the fan is currently on,
+    turn both off; otherwise turn the integrated light on. Kill-all wall
+    switch with light-on as the default action.
+  triggers:
+    - trigger: state
+      # The relay channel mirroring the wall-switch input.
+      entity_id: <YOUR_WALL_SWITCH_ENTITY>
+      # Filter out unknown / unavailable transitions at HA boot.
+      from:
+        - 'on'
+        - 'off'
+      to:
+        - 'on'
+        - 'off'
+  conditions: []
+  actions:
+    - if:
+        - condition: or
+          conditions:
+            - condition: state
+              entity_id: <YOUR_FAN_LIGHT_ENTITY>
+              state: 'on'
+            - condition: state
+              entity_id: <YOUR_FAN_ENTITY>
+              state: 'on'
+      then:
+        - action: light.turn_off
+          target:
+            entity_id: <YOUR_FAN_LIGHT_ENTITY>
+        - action: fan.turn_off
+          target:
+            entity_id: <YOUR_FAN_ENTITY>
+      else:
+        - action: light.turn_on
+          target:
+            entity_id: <YOUR_FAN_LIGHT_ENTITY>
+  # `single` drops re-triggers while the automation is still running. With a
+  # mechanical wall switch the worst case is a user double-flipping in <1s,
+  # which would otherwise queue or run in parallel. Drop the extra flip.
+  mode: single
