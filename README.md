@@ -27,7 +27,7 @@ The naive options are bad:
 
 Add a small Zigbee in-wall relay (SONOFF MINI-ZB2GS in this build) at the **ceiling junction box**, not at the wall switch. Wire it like this:
 
-* **Permanent live** lands on the relay's L terminal. The fan canopy is fed from a separate live tap (in the SONOFF MINI-ZB2GS, that tap comes "for free" from a second L terminal internally bridged to the first; in other relays you'd use a wago).
+* **Permanent live** lands on the relay's L terminal. The fan canopy receives its own permanent Live, independently of the relay's load output. That is the essence of bypass wiring: the load is wired *around* the relay, not *through* it. Where the fan's Live actually comes from is a separate question with multiple right answers (see "About the SONOFF MINI-ZB2GS dual L terminals" below).
 * **Neutral** is shared between the relay and the fan canopy.
 * **The wall switch chain** (Spanish *conmutador* / UK two-way / US 3-way) lands on the relay's **S input**, not on the load. The relay's L1/L2 load outputs stay capped and unused.
 * The relay is set to **edge-trigger mode**, so every wall-switch flip toggles the relay's reported state in Home Assistant.
@@ -57,14 +57,26 @@ The full wire-by-wire mapping for a Spanish two-way *conmutador* circuit is docu
 1. **Power off** at the breaker. Confirm with a multimeter.
 2. **Bring permanent live to the junction box.** In most installs this means tapping the live side of the existing lighting circuit before the wall switches. If you do not feel comfortable doing this, an electrician's involvement is short and cheap.
 3. **Run the relay's terminals** per the diagram:
-   * Permanent live -> `L` (and tap the second `L`, internally bridged, to feed the fan canopy live).
+   * Permanent live -> `L`. Route Live to the fan canopy from any convenient source: a separate breaker run, an external wago in the junction box, or (on the SONOFF MINI-ZB2GS specifically) by tapping the second `L` terminal which is internally bridged to the first. All three options yield the same bypass behaviour.
    * Neutral -> `N` and also to the fan canopy neutral.
    * Switched-live coming back from the wall-switch chain -> `S2` (or `S1`, your choice).
    * `L1` and `L2` load outputs: **leave capped and unused**.
 4. **Connect the fan canopy** to permanent live + neutral, not via the relay. The fan now has 230 V at all times.
 5. **Power on**, pair the relay to your Zigbee network, and pair the fan to its Tuya app + Home Assistant.
 
-The SONOFF MINI-ZB2GS has 7 screw terminals in the order `L L N L1 L2 S1 S2`. The two L terminals are internally bridged and exist exactly to let you split live in place without an external splice connector. Full pinout details are in [`manuals/sonoff_mini_zb2gs_user_manual_EN_V1.0.pdf`](manuals/sonoff_mini_zb2gs_user_manual_EN_V1.0.pdf).
+### About the SONOFF MINI-ZB2GS dual L terminals
+
+The SONOFF MINI-ZB2GS has 7 screw terminals in the order `L L N L1 L2 S1 S2`. The two L terminals are **internally bridged**: both are Live inputs and together they act as a built-in junction inside the relay's screw block. This is a **wiring-convenience feature**, not a bypass-mode feature. Sonoff describes it in their support docs and reviewers consistently call it out: in a typical smart-switch install you need to split the incoming Live wire so that it powers the relay **and** the wall switches' COM terminals. The second L lets you do that without an external wago, saving space in a crowded junction box.
+
+In a bypass install (this project), the second L is sometimes repurposed as a convenient tap point for the always-on load's Live wire (the fan canopy in our case). That works, but it is **optional**:
+
+* You can tap the second L on the Sonoff to feed the load. Convenient when the load lives in the same junction box.
+* You can run a separate Live wire from the breaker to the load. Cleaner if the load is on a different circuit or in a different location.
+* You can splice externally with a wago. The Sonoff is then identical to any other single-L relay.
+
+All three are valid. **Bypass wiring works on any 2-gang relay** (MOES MS-104BZ, ZBMINI Extreme, Shelly, Aqara, etc.), regardless of whether it has the dual-L convenience. The only thing that defines a bypass install is: the load's Live comes from somewhere other than the relay's L1/L2 output.
+
+Full pinout details and Sonoff's own wiring diagrams are in [`manuals/sonoff_mini_zb2gs_user_manual_EN_V1.0.pdf`](manuals/sonoff_mini_zb2gs_user_manual_EN_V1.0.pdf).
 
 ### Safety notes
 
