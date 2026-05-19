@@ -25,7 +25,12 @@ The naive options are bad:
 
 ## The solution
 
-Add a small Zigbee in-wall relay (SONOFF MINI-ZB2GS in this build) at the **ceiling junction box**, not at the wall switch. Wire it like this:
+Add a small Zigbee in-wall relay (SONOFF MINI-ZB2GS in this build) at the **junction point of your choice**. There are two viable options, the choice is yours and depends on which box has more room and easier access in your house:
+
+* **Ceiling junction box** (the option used in this build, and the one I would recommend): usually has more space, all relevant wires already meet there (live, neutral, both load returns, traveller pairs), and the relay is hidden from view. The downside is you need to work overhead.
+* **Wall switch box**: easier physical access. Workable as long as **both live and neutral** are present in the wall box, which is often the case in newer installations but rare in older Spanish *conmutador* wiring. If your wall box only carries live and travellers, this option is not available without pulling in a neutral wire.
+
+Wire the relay like this:
 
 * **Permanent live** lands on the relay's L terminal. The fan canopy receives its own permanent Live, independently of the relay's load output. That is the essence of bypass wiring: the load is wired *around* the relay, not *through* it. Where the fan's Live actually comes from is a separate question with multiple right answers (see "About the SONOFF MINI-ZB2GS dual L terminals" below).
 * **Neutral** is shared between the relay and the fan canopy.
@@ -48,7 +53,7 @@ The widely-used name for this layout is **bypass wiring** (Home Assistant commun
 
 Total cost in mid-2026 from Amazon.es: ~ 18 EUR per relay + ~ 165 EUR for the fan + a one-time ~ 30 EUR for a Zigbee dongle if you do not already have one.
 
-> Bypass wiring needs **permanent live + neutral** at the ceiling junction box. In Spanish / European *conmutador* houses, the wall-switch boxes typically only see live and travellers; the live, neutral and load wires only meet at the ceiling rosette or junction box. That is the right place for the relay, not the wall.
+> Bypass wiring needs **permanent live + neutral** wherever the relay lives. In Spanish / European *conmutador* houses, the wall-switch boxes typically only see live and travellers; the live, neutral and load wires only meet at the ceiling rosette or junction box. In that situation the ceiling box is effectively the only choice. In newer installations where both live and neutral reach the wall box, either location works and the wall box can be more convenient. The ceiling junction box is my preference (more room, all the wires already converge there), but pick the box that has space, neutral, and easier access in your house.
 
 ## Wiring
 
