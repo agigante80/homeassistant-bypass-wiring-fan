@@ -11,38 +11,48 @@ This repo documents one specific install (SONOFF MINI-ZB2GS Zigbee relay + Ovlai
 
 > ⚠ **Wire-colour disclaimer.** Wire colour codes vary by country, era, and individual installation. The colours shown in these diagrams (Brown or Black = Live, Blue = Neutral, Grey = switched live, Green/Yellow = Earth) reflect the specific apartment where this build was done and follow modern EU practice. Yours may use entirely different colours for the same electrical roles. Always switch off the breaker, verify with a multimeter, and consult a qualified electrician before working on mains wiring.
 
-## The problem this solves
+## The starting point
 
-If you replace a "dumb" ceiling lamp with a WiFi smart ceiling fan, you hit a paradox:
+This house has a Spanish two-way (*conmutador*) circuit in the living room: two wall switches at opposite ends, sharing two travellers (Spanish: *viajeros*, French: *navettes*) between them, controlling a single ceiling lamp. Standard EU setup, the wall switches sit between the live wire and the lamp and break the circuit when off. [`diagrams/01-before-conmutador.png`](diagrams/01-before-conmutador.png) shows the starting point as-was.
 
-* The fan's smart canopy needs **constant power** so its WiFi/Tuya chip stays on the network. The moment a wall switch cuts power, the canopy reboots and Home Assistant loses the entity.
-* But people in the house still expect the wall switch on the wall to **do something useful**.
-* In Spanish/European two-way (*conmutador*) circuits and US 3-way circuits, the wall switches sit between live and the lamp and break the circuit. They are not stateless push buttons; they are full single-pole-double-throw switches.
+## What I wanted
 
-The naive options are bad:
+Replace the dumb light with a **smart ceiling fan that has an integrated light**, controllable from Home Assistant. Concrete use cases:
 
-* Tape the wall switch in the "on" position. Works, but the switch is now a lie.
-* Replace the wall switch with a smart switch and put the fan downstream. The fan loses constant power and drops off WiFi every time someone flips the switch.
-* Hardwire the fan past the switch and lose the wall control entirely.
+* Automations like *"if the living-room temperature is above 25 °C between 22:00 and 06:00, run the fan at the lowest speed"*.
+* Voice control via Alexa / Google.
+* App control via the HA companion app.
+* The two existing wall switches should keep working as if nothing changed.
 
-## The solution
+## Why the naive approaches break
 
-Add a small Zigbee in-wall relay (SONOFF MINI-ZB2GS in this build) at the **junction point of your choice**. There are two viable options, the choice is yours and depends on which box has more room and easier access in your house:
+The fan I chose ([Ovlaim 132 cm DC](https://www.amazon.es/dp/B08RMN3YRN)) has a Tuya Wi-Fi smart canopy. The canopy holds the speed controller, the LED driver, and the Wi-Fi chip that talks to Home Assistant. That chip needs **constant 230 V** to stay on the Wi-Fi network; if it ever loses power, the canopy takes 20-30 seconds to boot and reconnect.
 
-* **Ceiling junction box** (the option used in this build, and the one I would recommend): usually has more space, all relevant wires already meet there (live, neutral, both load returns, traveller pairs), and the relay is hidden from view. The downside is you need to work overhead.
-* **Wall switch box**: easier physical access. Workable as long as **both live and neutral** are present in the wall box, which is often the case in newer installations but rare in older Spanish *conmutador* wiring. If your wall box only carries live and travellers, this option is not available without pulling in a neutral wire.
+That single fact rules out every "obvious" wiring option:
 
-Wire the relay like this:
+| Approach | What it does | Why it fails |
+|---|---|---|
+| Put a Sonoff (or any smart relay) in line with the wall switch, fan downstream on the relay's load output | Wall switch cuts power to the fan; HA can also toggle the fan over Zigbee | Every time the relay is "off" the canopy loses power and drops off Wi-Fi. Pure dumb-bulb pattern, breaks on a smart load. |
+| Same as above, but work around it in HA: every command first turns the relay on, waits 20-30 s for the canopy to boot and reconnect, then sends the actual speed / light command | Eventually works | Adds 20+ seconds of latency to **every** interaction (HA automation, voice command, app tap, wall-switch flip alike). The "smart" device is no longer instantly responsive. Defeats the point. |
+| Tape the wall switches permanently to the "on" position | Canopy stays powered | The wall switches become a lie, no real manual control |
+| Replace the wall switches with smart switches, put the fan downstream | Single point of control via the smart switch | Canopy still loses power whenever the smart switch is off |
+| Hardwire the fan past the switches entirely | Canopy always powered | The wall switches do nothing at all |
 
-* **Permanent live** lands on the relay's L terminal. The fan canopy receives its own permanent Live, independently of the relay's load output. That is the essence of bypass wiring: the load is wired *around* the relay, not *through* it. Where the fan's Live actually comes from is a separate question with multiple right answers (see "About the SONOFF MINI-ZB2GS dual L terminals" below).
-* **Neutral** is shared between the relay and the fan canopy.
-* **The wall switch chain** (Spanish *conmutador* / UK two-way / US 3-way) lands on the relay's **S input**, not on the load. The relay's L1/L2 load outputs stay capped and unused.
-* The relay is set to **edge-trigger mode**, so every wall-switch flip toggles the relay's reported state in Home Assistant.
-* A Home Assistant automation listens to the relay's switch entity and decides what to do with the fan and light.
+## The bypass-wiring approach
 
-The fan canopy is therefore **always powered**. The wall switches still feel mechanical, still snap up and down, still look identical to the neighbours' switches. Home Assistant sees a state change every time someone touches the switch and runs whatever logic you want, including: "if anything is on, turn it all off; else turn the light on" (the [included automation](automations/wall_switch_smart_toggle.yaml)).
+Wire the fan canopy **directly to permanent live and neutral, completely bypassing the relay's load output**. The canopy is always powered, always on Wi-Fi, always reachable from HA. [`diagrams/02-after-bypass-wiring.png`](diagrams/02-after-bypass-wiring.png) shows the result.
 
-The widely-used name for this layout is **bypass wiring** (Home Assistant community), also called **decoupled switch wiring** (Zigbee2MQTT community) or **smart-bulb wiring** when applied to bulbs. The terminology table at the bottom of this README compares it with a related-but-different firmware feature called **detached / decoupled mode**.
+The wall switches are no longer connected to the load. Instead, the switched-live coming back from the conmutador chain lands on the relay's **S input**. The relay is set to **edge-trigger mode**, so every wall-switch flip toggles the relay's reported switch state in Home Assistant.
+
+A small Home Assistant automation listens to that switch entity and decides what to do with the fan and light: if the light or the fan is currently on, turn both off; if both are off, turn the light on. The wall switch behaves like a smart toggle (light on by default, kill-all when anything is running). The fan canopy stays online forever.
+
+The widely-used name for this layout is **bypass wiring** (Home Assistant community), also called **decoupled switch wiring** (Zigbee2MQTT community) or **smart-bulb wiring** when applied to bulbs. The [terminology table at the bottom of this README](#terminology-bypass-vs-decoupled-vs-detached-vs-smart-bulb-wiring) compares it with a related-but-different firmware feature called **detached / decoupled mode**.
+
+## End result
+
+* **Wall switches look and feel completely normal.** Same brand, same physical click, same wall plate. Anyone in the house can use them without knowing anything changed.
+* **The fan canopy never loses power.** HA automations fire instantly, no boot-and-wait penalty between trigger and response.
+* **Three control surfaces work in parallel.** Voice control (Alexa / Google), the Home Assistant app, and the wall switches all talk to the same fan independently and stay in sync via HA.
 
 ## Hardware
 
@@ -55,21 +65,30 @@ The widely-used name for this layout is **bypass wiring** (Home Assistant commun
 
 Total cost in mid-2026 from Amazon.es: ~ 18 EUR per relay + ~ 165 EUR for the fan + a one-time ~ 30 EUR for a Zigbee dongle if you do not already have one.
 
-> Bypass wiring needs **permanent live + neutral** wherever the relay lives. In Spanish / European *conmutador* houses, the wall-switch boxes typically only see live and travellers; the live, neutral and load wires only meet at the ceiling rosette or junction box. In that situation the ceiling box is effectively the only choice. In newer installations where both live and neutral reach the wall box, either location works and the wall box can be more convenient. The ceiling junction box is my preference (more room, all the wires already converge there), but pick the box that has space, neutral, and easier access in your house.
-
 ## Wiring
 
-The full wire-by-wire mapping for a Spanish two-way *conmutador* circuit is documented in the diagrams. In short:
+### Where to install the relay
+
+Bypass wiring needs **permanent live + neutral** wherever the relay sits. Two viable locations, pick the one that has the wires and the room in your house:
+
+* **Ceiling junction box** (the option used in this build, and the one I would recommend). Usually has more space, all relevant wires already meet there (live, neutral, both load returns, the traveller pair), and the relay ends up hidden from view. Downside: you work overhead.
+* **Wall switch box**. Easier physical access. Workable only if **both live and neutral** are present in the wall box. Common in newer installations, rare in older conmutador wiring where the wall box only carries live and travellers.
+
+In Spanish / European *conmutador* houses, neutral usually only reaches the ceiling rosette or junction box, which makes the ceiling box effectively the only choice. In newer installations either location works and the wall box can be more convenient.
+
+### Steps
+
+The full wire-by-wire mapping is in the diagrams. In short:
 
 1. **Power off** at the breaker. Confirm with a multimeter.
-2. **Bring permanent live to the junction box.** In most installs this means tapping the live side of the existing lighting circuit before the wall switches. If you do not feel comfortable doing this, an electrician's involvement is short and cheap.
-3. **Run the relay's terminals** per the diagram:
+2. **Bring permanent live** to the box where the relay will live. In most installs this means tapping the live side of the existing lighting circuit before the wall switches. If you do not feel comfortable doing this, an electrician's involvement is short and cheap.
+3. **Wire the relay's terminals** per the diagram:
    * Permanent live -> `L`. Route Live to the fan canopy from any convenient source: a separate breaker run, an external wago in the junction box, or (on the SONOFF MINI-ZB2GS specifically) by tapping the second `L` terminal which is internally bridged to the first. All three options yield the same bypass behaviour.
    * Neutral -> `N` and also to the fan canopy neutral.
    * Switched-live coming back from the wall-switch chain -> `S2` (or `S1`, your choice).
    * `L1` and `L2` load outputs: **leave capped and unused**.
 4. **Connect the fan canopy** to permanent live + neutral, not via the relay. The fan now has 230 V at all times.
-5. **Power on**, pair the relay to your Zigbee network, and pair the fan to its Tuya app + Home Assistant.
+5. **Power on**, pair the relay to your Zigbee network, and pair the fan to its Tuya / Smart Life app + Home Assistant.
 
 ### About the SONOFF MINI-ZB2GS dual L terminals
 
