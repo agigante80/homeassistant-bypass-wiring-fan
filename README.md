@@ -134,7 +134,8 @@ The automation uses `mode: single` so that a double-flip in less than a second i
 │   ├── 01-before-conmutador.png       starting state: standard European two-way circuit
 │   ├── 02-after-bypass-wiring.png     final state: bypass wiring with Zigbee relay + Tuya WiFi fan
 │   ├── 03-linkedin-banner.png         landscape (~1.91:1) variant of the AFTER diagram, framed for LinkedIn link-preview crop
-│   └── wiring-diagrams.excalidraw     editable source for all three PNGs (open at excalidraw.com)
+│   ├── 04-reddit-before-after.png     portrait BEFORE+AFTER combo on a single image, sized for Reddit inline feed display
+│   └── wiring-diagrams.excalidraw     editable source for all four PNGs (open at excalidraw.com)
 └── manuals/                           official vendor PDFs, included for offline reference
     ├── sonoff_mini_zb2gs_user_manual_EN_V1.0.pdf
     ├── sonoff_mini_duo_quick_guide_V1.1.pdf       (multi-language quick guide)
