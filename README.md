@@ -9,6 +9,8 @@ This repo documents one specific install (SONOFF MINI-ZB2GS Zigbee relay + Ovlai
 
 > Both PNG diagrams are exported from a single [Excalidraw source file](diagrams/wiring-diagrams.excalidraw). To customise them for your own setup (different brand, different room, different language), upload the `.excalidraw` file to [excalidraw.com](https://excalidraw.com/) or open it in the Excalidraw desktop app, edit, and re-export PNG. Pull requests with diagram improvements are welcome.
 
+> ⚠ **Wire-colour disclaimer.** Wire colour codes vary by country, era, and individual installation. The colours shown in these diagrams (Brown or Black = Live, Blue = Neutral, Grey = switched live, Green/Yellow = Earth) reflect the specific apartment where this build was done and follow modern EU practice. Yours may use entirely different colours for the same electrical roles. Always switch off the breaker, verify with a multimeter, and consult a qualified electrician before working on mains wiring.
+
 ## The problem this solves
 
 If you replace a "dumb" ceiling lamp with a WiFi smart ceiling fan, you hit a paradox:
