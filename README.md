@@ -205,3 +205,9 @@ These four terms appear interchangeably online but they do not all mean exactly 
 | **Pulse / momentary / latching** | Physical switch type | Describes the *physical* style of the wall switch wired to S. Latching = standard rocker that stays in position (most European wall switches). Momentary = push-button that springs back. Edge-trigger mode handles both. | Electrician's vocabulary, Sonoff manuals. |
 
 The big one to remember: **bypass wiring** (physical) and **detached relay mode** (firmware) can deliver similar end behaviour, but only one of them is happening in this project. If your relay does not expose detached mode, or if you want a brand-agnostic solution that does not depend on a specific firmware version, **bypass wiring** is the safe pick. That is what is documented here.
+
+## Sponsor
+
+I build and maintain this in my own time. It is free, it stays free, and it gets maintained either way.
+
+If it saved you some time and you feel like saying thanks, you can do that at [github.com/sponsors/agigante80](https://github.com/sponsors/agigante80). Entirely optional, and nothing about the project changes either way.
